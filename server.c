@@ -61,14 +61,24 @@ int main() {
 
     // https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/apis/recvms.htm
     while (TRUE) {
+        /*
+         * Notice how we have no other state outside this while loop!
+         * we can possibly serve a huge number of client without opening any new sockets!
+         */
         struct sockaddr_in clientaddr;
         socklen_t clientaddr_len = sizeof(clientaddr);
-        // Clean buffer
+        in_addr_t *client_addr_str;
+
+        // Clean buffers
         memset(in, 0, BUFSIZE);
         memset(out, 0, BUFSIZE);
         memset(&clientaddr, 0, sizeof(clientaddr));
-        in_addr_t *client_addr_str;
 
+        /*
+         * Packets are sent individually and are checked for integrity only if they arrive.
+         * Packets have definite boundaries which are honored upon receipt,
+         * meaning a read operation at the receiver socket will yield an entire message as it was originally sent!
+         */
         ssize_t message_len = recvfrom(sockfd, in, BUFSIZE, 0, (struct sockaddr *) &clientaddr, &clientaddr_len);
         DEBUG_PRINT("DEBUG: got message of len %zi\n", message_len);
         DEBUG_PRINT("DEBUG: message content: %s\n", in);
