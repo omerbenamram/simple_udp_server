@@ -12,7 +12,7 @@ void panic(char *msg) {
 }
 
 #define SERVER_PORT 8080
-#define BUFSIZE 4096
+#define BUFSIZE 1024
 #define TRUE 1
 #define FALSE 0
 
