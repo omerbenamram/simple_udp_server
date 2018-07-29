@@ -31,7 +31,7 @@ int main() {
 
     char in[BUFSIZE];
     char out[BUFSIZE];
-    
+
     fprintf(stdout, "INFO: server starting\n");
     fflush(stdout);
 
@@ -62,39 +62,19 @@ int main() {
     // https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/apis/recvms.htm
     while (TRUE) {
         struct sockaddr_in clientaddr;
+        socklen_t clientaddr_len = sizeof(clientaddr);
         // Clean buffer
         memset(in, 0, BUFSIZE);
         memset(out, 0, BUFSIZE);
         memset(&clientaddr, 0, sizeof(clientaddr));
-
-        struct msghdr incoming_message;
-        struct iovec iov_in[1];
-
         in_addr_t *client_addr_str;
-        ssize_t message_len;
 
-        memset(&incoming_message, 0, sizeof(incoming_message));
-        iov_in[0].iov_base = &in[0];
-        iov_in[0].iov_len = BUFSIZE;
-
-        // Client addr will be stored here
-        incoming_message.msg_name = &clientaddr;
-        incoming_message.msg_namelen = sizeof(clientaddr);
-
-        incoming_message.msg_iov = iov_in;
-        incoming_message.msg_iovlen = 1;
-        incoming_message.msg_control = NULL;
-        incoming_message.msg_controllen = 0;
-
-        message_len = recvmsg(sockfd, &incoming_message, 0);
+        ssize_t message_len = recvfrom(sockfd, in, BUFSIZE, 0, (struct sockaddr *) &clientaddr, &clientaddr_len);
         DEBUG_PRINT("DEBUG: got message of len %zi\n", message_len);
         DEBUG_PRINT("DEBUG: message content: %s\n", in);
 
         if (message_len < 0) {
             panic("ERROR recvmsg failed");
-        } else if (incoming_message.msg_flags & MSG_TRUNC) {
-            // Of couse we could warn here.. but panic for example.
-            panic("ERROR datagram too large for buffer message truncated");
         } else {
             // Datagram is good! send echo replay.
             client_addr_str = &clientaddr.sin_addr.s_addr;
@@ -107,23 +87,10 @@ int main() {
             DEBUG_PRINT("DEBUG: Answering: \"Hello %s, you've sent: %s\"\n", hostp->h_name, in);
             sprintf(out, "Hello %s, you've sent: %s", hostp->h_name, in);
 
-            struct msghdr outgoing_message;
-            struct iovec iov_out[1];
-            iov_out[0].iov_base = out;
-            iov_out[0].iov_len = BUFSIZE;
 
-            memset(&outgoing_message, 0, sizeof(outgoing_message));
-            outgoing_message.msg_name = &clientaddr;
-            outgoing_message.msg_namelen = sizeof(clientaddr);
-            outgoing_message.msg_iov = iov_out;
-            outgoing_message.msg_iovlen = 1;
-            outgoing_message.msg_control = NULL;
-            outgoing_message.msg_controllen = 0;
-
-            if (sendmsg(sockfd, &outgoing_message, 0) < 0) {
+            if (sendto(sockfd, out, BUFSIZE, 0, (const struct sockaddr *) &clientaddr, clientaddr_len) < 0) {
                 panic("ERROR send_message failed");
             }
-
         }
 
     }
