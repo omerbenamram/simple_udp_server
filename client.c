@@ -62,10 +62,6 @@ int main(int argc, char **argv) {
 
     memset(out, 0, BUFSIZE);
     memset(in, 0, BUFSIZE);
-
-    in_addr_t *client_addr_str;
-    ssize_t message_len;
-
     sprintf(out, "%s", message);
 
     while (TRUE) {
