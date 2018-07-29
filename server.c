@@ -48,10 +48,9 @@ int main() {
         panic("ERROR opening socket");
     }
 
-    // Initialize server address struct
     memset(&serveraddr, 0, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
-    // Same as 0.0.0.0
+    // INADDR_ANY - bind to "0.0.0.0" (all interfaces)
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serveraddr.sin_port = htons(SERVER_PORT);
 
@@ -59,7 +58,6 @@ int main() {
         panic("ERROR binding");
     }
 
-    // https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/apis/recvms.htm
     while (TRUE) {
         /*
          * Notice how we have no other state outside this while loop!
