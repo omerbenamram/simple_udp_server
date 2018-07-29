@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <netdb.h>
+#include <zconf.h>
 
 void panic(char *msg) {
     perror(msg);
@@ -21,8 +22,21 @@ void panic(char *msg) {
 #define DEBUG_PRINT(...) do{ } while ( FALSE )
 #endif
 
-int main() {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+
+int main(int argc, char **argv) {
+    char *message;
+
+    if (argc < 2) // no arguments were passed
+    {
+        message = "Hello world";
+    } else {
+        message = argv[1];
+    }
+
     struct sockaddr_in serveraddr;
+
     memset(&serveraddr, 0, sizeof(serveraddr));
 
     serveraddr.sin_family = AF_INET;
@@ -52,19 +66,25 @@ int main() {
     in_addr_t *client_addr_str;
     ssize_t message_len;
 
-    sprintf(out, "Hello world!");
+    sprintf(out, "%s", message);
 
-    if (sendto(client_sock, out, BUFSIZE, 0, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0) {
-        panic("ERROR: sendto");
-    } else {
-        ssize_t resplen = recvfrom(client_sock, in, BUFSIZE, 0, NULL, 0);
+    while (TRUE) {
+        if (sendto(client_sock, out, BUFSIZE, 0, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0) {
+            panic("ERROR: sendto");
+        } else {
+            ssize_t resplen = recvfrom(client_sock, in, BUFSIZE, 0, NULL, 0);
 
-        if (resplen < 0) {
-            panic("ERROR: failed to recv response from server");
+            if (resplen < 0) {
+                panic("ERROR: failed to recv response from server");
+            }
+
+            fprintf(stdout, "Server sent: %s\n", in);
+            fflush(stdout);
         }
-
-        fprintf(stdout, "Server sent: %s\n", in);
-        fflush(stdout);
+        sleep(1);
     }
 
+
 }
+
+#pragma clang diagnostic pop
